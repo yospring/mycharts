@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: "frontwebpage-{{ .Values.username }}"
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+    app: "frontwebpage-{{ .Values.username }}"
+  template:
+    metadata:
+      labels:
+        app: "frontwebpage-{{ .Values.username }}"
+    spec:
+      containers:
+      - name: "frontwebpage-{{ .Values.username }}"
+        image: "jp.icr.io/cr-namespace-{{ .Values.username }}/frontwebpage:{{ .Values.frontwebtag }}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 200m
+            memory: 300Mi
+        env:
+        - name: API_URL
+          value: "http://academycluster.seo01.containers.appdomain.cloud/{{ .Values.username }}"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: "frontwebpage-svc-{{ .Values.username }}"
+spec:
+  selector:
+    app: "frontwebpage-{{ .Values.username }}"
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http

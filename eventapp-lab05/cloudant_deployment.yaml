@@ -1,0 +1,73 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: "cloudant-pvc-{{ .Values.username }}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "cloudant-service-{{ .Values.username }}"
+  labels:
+    app: "getstartedjava-{{ .Values.username }}"
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+  selector:
+    app: "cloudant-deployment-{{ .Values.username }}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "cloudant-deployment-{{ .Values.username }}"
+  labels:
+    app: "getstartedjava-{{ .Values.username }}"
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+    app: "cloudant-deployment-{{ .Values.username }}"
+  template:
+    metadata:
+      labels:
+        app: "cloudant-deployment-{{ .Values.username }}"
+    spec:
+      containers:
+      - name: "cloudant-db-{{ .Values.username }}"
+        image: ibmcom/cloudant-developer:1.0.1
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: dbUsername
+          valueFrom:
+            secretKeyRef:
+              name: cloudant-secret
+              key: dbUsername
+        - name: dbPassword
+          valueFrom:
+            secretKeyRef:
+              name: cloudant-secret
+              key: dbPassword
+        command: ["/bin/sh","-c"]
+        args: ["if [ ! -z $dbPassword ]; then sed -i 's/^admin.*/admin = '$dbPassword'/g' /opt/cloudant/etc/local.ini && sed -i 's/^cloudant.*/cloudant = '$dbPassword'/g' /opt/cloudant/etc/local.ini && if [ ! -a /srv/cloudant ]; then sed -i 's/172.17.0.2/127.0.0.1/g' /etc/haproxy/haproxy.cfg && cast license --silent && cast database init -v -y -p $dbPassword ; fi; exec /usr/sbin/init; fi;"]
+        securityContext:
+          privileged: true
+        ports:
+          - containerPort: 80
+            name: http
+        volumeMounts:
+        - name: "{{ .Values.username }}-pv"
+          mountPath: /srv
+      volumes:
+        - name: "{{ .Values.username }}-pv"
+          persistentVolumeClaim:
+            claimName: "cloudant-pvc-{{ .Values.username }}"

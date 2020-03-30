@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: "getstartedjava-{{ .Values.username }}"
+  labels:
+    app: "getstartedjava-{{ .Values.username }}"
+    version: v1
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+    app: "getstartedjava-{{ .Values.username }}"
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+      labels:
+        app: "getstartedjava-{{ .Values.username }}"
+        version: v1
+    spec:
+      containers:
+      - name: "getstartedjava-{{ .Values.username }}"
+        image: "jp.icr.io/cr-namespace-{{ .Values.username }}/getstartedjava:{{ .Values.getstartedtag }}"
+        env:
+          - name: VERSION
+            value: "1"
+          - name: CLOUDANT_URL
+            value: "http://cloudant-service-{{ .Values.username }}:80"
+          - name: dbUsername
+            valueFrom:
+              secretKeyRef:
+                name: cloudant-secret
+                key: dbUsername
+          - name: dbPassword
+            valueFrom:
+              secretKeyRef:
+                name: cloudant-secret
+                key: dbPassword
+        ports:
+        - containerPort: 9080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    webapi: "true"
+  name: "getstartedjava-{{ .Values.username }}"
+  labels:
+    app: "getstartedjava-{{ .Values.username }}"
+spec:
+  selector:
+    app: "getstartedjava-{{ .Values.username }}"
+  type: NodePort
+  ports:
+  - port: 9080
+    targetPort: 9080
+    protocol: TCP
+    name: http

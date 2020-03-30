@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  eventapp-lab05:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: 2020-03-31T01:14:49.8055883+09:00
+    description: A Helm chart for Kubernetes
+    digest: 6a00b63be071f66f91d1505898397c94e09aabc4b67332710bddc9bc353dd149
+    name: eventapp-lab05
+    urls:
+    - https://yospring.github.io/mycharts/eventapp-lab05-0.1.0.tgz
+    version: 0.1.0
+generated: 2020-03-31T01:14:49.8035783+09:00

@@ -1,0 +1,7 @@
+# Default values for eventapp.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+username: lab05
+getstartedtag: v0.1
+frontwebtag: v0.1
